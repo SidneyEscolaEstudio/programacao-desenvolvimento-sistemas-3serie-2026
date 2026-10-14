@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico Python — 3ª Série</title>
+<style>
+:root{--bg:#071225;--panel:#0d1d36;--line:#21466e;--cyan:#20d8ff;--green:#31d07f;--yellow:#ffc94d;--red:#ff5c74;--text:#f3f7ff;--muted:#a9bdd8}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}.wrap{max-width:1400px;margin:auto;padding:20px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}h1 span{color:var(--cyan)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#08162b;color:var(--text)}button{padding:10px 14px;border:0;border-radius:10px;font-weight:bold;cursor:pointer;background:var(--cyan)}button.danger{background:var(--red);color:#fff}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1050px}th,td{padding:8px;border-bottom:1px solid #17385b;text-align:left}th{background:#102746}.tag{display:inline-block;padding:4px 7px;border-radius:999px;font-size:12px;font-weight:bold}.domina{color:#6af1aa;border:1px solid #31d07f}.apoio{color:#ffd86e;border:1px solid #ffc94d}.nao{color:#ff8798;border:1px solid #ff5c74}.scenario{margin-top:14px;padding:14px;border:1px solid var(--cyan);border-radius:12px}.mini{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Diagnóstico <span>Python</span> — 3ª Série</h1>
+<p class="mini">Uso do professor/mediador durante a Aula 01.</p>
+
+<div class="card">
+  <div class="grid">
+    <div><label>Aluno</label><input id="nome" placeholder="Nome completo"></div>
+    <div><label>Entrada/saída</label><select id="entrada"></select></div>
+    <div><label>if</label><select id="condicao"></select></div>
+    <div><label>for</label><select id="repeticao"></select></div>
+    <div><label>Listas</label><select id="listas"></select></div>
+    <div><label>Funções</label><select id="funcoes"></select></div>
+    <div><label>POO</label><select id="poo"></select></div>
+    <div><label>Observação</label><input id="obs" placeholder="Ex.: dificuldade em classe/objeto"></div>
+  </div>
+  <div class="toolbar">
+    <button onclick="adicionar()">Adicionar aluno</button>
+    <button onclick="exportarCSV()">Exportar CSV</button>
+    <button onclick="window.print()">Imprimir</button>
+    <button class="danger" onclick="limpar()">Limpar tudo</button>
+  </div>
+</div>
+
+<div class="card table-wrap">
+<table>
+<thead><tr><th>Aluno</th><th>Entrada/saída</th><th>if</th><th>for</th><th>Listas</th><th>Funções</th><th>POO</th><th>Observação</th><th>Resumo</th><th>Ação</th></tr></thead>
+<tbody id="tabela"></tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>Resumo da turma</h2>
+<div id="resumo"></div>
+<div class="scenario" id="cenario">Registre alunos para gerar uma recomendação.</div>
+</div>
+</div>
+<script>
+const KEY='diagnostico_python_3serie_v1';
+const ids=['entrada','condicao','repeticao','listas','funcoes','poo'];
+const nomes={entrada:'Entrada/saída',condicao:'if',repeticao:'for',listas:'Listas',funcoes:'Funções',poo:'POO'};
+let alunos=JSON.parse(localStorage.getItem(KEY)||'[]');
+function montarSelect(id){document.getElementById(id).innerHTML='<option value="domina">✅ Domina</option><option value="apoio">⚠️ Precisa de apoio</option><option value="nao">❌ Não demonstrou domínio</option>'}
+ids.forEach(montarSelect);
+function texto(v){return v==='domina'?'✅ Domina':v==='apoio'?'⚠️ Apoio':'❌ Não domina'}
+function nota(v){return v==='domina'?2:v==='apoio'?1:0}
+function resumoAluno(a){const m=ids.reduce((s,id)=>s+nota(a[id]),0)/(ids.length*2);return m>=.8?'Base consolidada':m>=.5?'Base parcial':'Recomposição necessária'}
+function adicionar(){const nome=document.getElementById('nome').value.trim();if(!nome)return alert('Digite o nome do aluno.');const a={id:Date.now(),nome,obs:document.getElementById('obs').value.trim()};ids.forEach(id=>a[id]=document.getElementById(id).value);alunos.push(a);salvar();document.getElementById('nome').value='';document.getElementById('obs').value='';render()}
+function salvar(){localStorage.setItem(KEY,JSON.stringify(alunos))}
+function remover(id){alunos=alunos.filter(a=>a.id!==id);salvar();render()}
+function limpar(){if(confirm('Apagar todos os registros?')){alunos=[];localStorage.removeItem(KEY);render()}}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function render(){const tb=document.getElementById('tabela');tb.innerHTML='';alunos.forEach(a=>{const tr=document.createElement('tr');let h='<td><strong>'+esc(a.nome)+'</strong></td>';ids.forEach(id=>h+='<td><span class="tag '+a[id]+'">'+texto(a[id])+'</span></td>');h+='<td>'+esc(a.obs||'-')+'</td><td>'+resumoAluno(a)+'</td><td><button class="danger" onclick="remover('+a.id+')">Excluir</button></td>';tr.innerHTML=h;tb.appendChild(tr)});atualizarResumo()}
+function atualizarResumo(){const r=document.getElementById('resumo');if(!alunos.length){r.innerHTML='<p>Nenhum aluno registrado.</p>';document.getElementById('cenario').innerHTML='Registre alunos para gerar uma recomendação.';return}let html='';ids.forEach(id=>{const soma=alunos.reduce((s,a)=>s+nota(a[id]),0);const pct=Math.round(soma/(alunos.length*2)*100);html+='<p><strong>'+nomes[id]+':</strong> '+pct+'%</p>'});r.innerHTML=html;const basicos=['entrada','condicao','repeticao','listas','funcoes'];const pb=alunos.reduce((s,a)=>s+basicos.reduce((t,id)=>t+nota(a[id]),0),0)/(alunos.length*basicos.length*2);const pp=alunos.reduce((s,a)=>s+nota(a.poo),0)/(alunos.length*2);let c='';if(pb<.60)c='<strong>Cenário 1 — Recomposição.</strong> Retomar fundamentos de Python.';else if(pp<.60)c='<strong>Cenário 2 — POO básica.</strong> Consolidar classes, objetos, atributos e métodos.';else c='<strong>Cenário 3 — Avançar.</strong> Iniciar herança e super().';document.getElementById('cenario').innerHTML=c}
+function exportarCSV(){if(!alunos.length)return alert('Não há dados.');const linhas=[['Aluno','Entrada/saída','if','for','Listas','Funções','POO','Observação','Resumo']];alunos.forEach(a=>linhas.push([a.nome,texto(a.entrada),texto(a.condicao),texto(a.repeticao),texto(a.listas),texto(a.funcoes),texto(a.poo),a.obs||'',resumoAluno(a)]));const csv='\ufeff'+linhas.map(l=>l.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(blob);const link=document.createElement('a');link.href=u;link.download='diagnostico_python_3serie.csv';link.click();URL.revokeObjectURL(u)}
+render();
+</script>
+</body>
+</html>
